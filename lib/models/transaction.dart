@@ -1,11 +1,13 @@
-class Transaction {
-  final String title;
-  final double amount;
-  final bool isExpense;
+class ExpenseModel {
+  String item;
+  int amount;
+  bool isIncome;
+  DateTime date;
 
-  Transaction({
-    required this.title,
+  ExpenseModel({
+    required this.item,
     required this.amount,
-    required this.isExpense,
+    required this.isIncome,
+    required this.date,
   });
 }
