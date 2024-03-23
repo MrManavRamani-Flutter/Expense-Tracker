@@ -112,7 +112,7 @@ class AddBudget extends StatelessWidget {
                     Obx(
                       () {
                         return Text(
-                          "${homePageController.time.value}",
+                          homePageController.time.value,
                           style: const TextStyle(fontSize: 16),
                         );
                       },
