@@ -1,326 +1,84 @@
-import 'package:expense_tracker/models/transaction.dart';
-import 'package:expense_tracker/views/widgets/fund_condition_widget.dart';
-import 'package:expense_tracker/views/widgets/item.dart';
+import 'package:expense_tracker/views/screens/controller/homepage_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:get/get.dart';
 
-class HomePage extends StatefulWidget {
+import '../components/add_budget.dart';
+import '../components/budget_history.dart';
+import '../components/categories.dart';
+
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-List options = ["expense", "income"];
-List<ExpenseModel> expenses = [];
-
-class _HomePageState extends State<HomePage> {
-  final itemController = TextEditingController();
-  final amountController = TextEditingController();
-  int amount = 0;
-  final dateController = TextEditingController();
-  int totalMoney = 0;
-  int spentMoney = 0;
-  int income = 0;
-  DateTime? pickedDate;
-  String currentOption = options[0];
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      floatingActionButton: SizedBox(
-        // height: 67,
-        child: FloatingActionButton(
-          // backgroundColor: Colors.purple,
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) {
-                return SizedBox(
-                  child: AlertDialog(
-                    title: const Padding(
-                      padding: EdgeInsets.only(left: 1.6),
-                      child: Text("ADD TRANSACTION"),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          amount = int.parse(amountController.text);
-                          // adding a new item
-                          final expense = ExpenseModel(
-                            item: itemController.text,
-                            amount: amount,
-                            isIncome: currentOption == "income" ? true : false,
-                            date: pickedDate!,
-                          );
-                          expenses.add(expense);
-                          if (expense.isIncome) {
-                            income += expense.amount;
-                            totalMoney += expense.amount;
-                            setState(() {});
-                          } else if (!expense.isIncome) {
-                            spentMoney += expense.amount;
-                            totalMoney -= expense.amount;
-                            setState(() {});
-                          }
+    final HomePageController homePageController = Get.put(HomePageController());
 
-                          itemController.clear();
-                          amountController.clear();
-                          dateController.clear();
-                          Navigator.pop(context);
-                        },
-                        child: const Text(
-                          "ADD",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
+    List<Widget> pages = [
+      const Categories(),
+      const AddBudget(),
+      const BudgetHistory(),
+    ];
+
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              Colors.blueAccent.shade100,
+            ],
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              flex: 6,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: PageView(
+                  onPageChanged: (val) async {
+                    await homePageController.changePage(val);
+                  },
+                  controller: homePageController.pageController,
+                  children: pages,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.all(25),
+                color: Colors.transparent,
+                child: Obx(
+                  () => BottomNavigationBar(
+                    backgroundColor: Colors.transparent,
+                    currentIndex: homePageController.currentPage.value,
+                    onTap: (val) async {
+                      await homePageController.changePage(val);
+                    },
+                    elevation: 0,
+                    selectedItemColor: Colors.black,
+                    unselectedItemColor: Colors.pink,
+                    useLegacyColorScheme: true,
+                    enableFeedback: true,
+                    items: const [
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.category),
+                        label: 'Categories',
                       ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Text(
-                          "CANCEL",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.monetization_on),
+                        label: 'Add Budget',
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.history),
+                        label: 'History',
                       ),
                     ],
-                    content: SizedBox(
-                      width: 400,
-                      child: SingleChildScrollView(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextField(
-                              controller: itemController,
-                              decoration: const InputDecoration(
-                                hintText: "Enter the Item",
-                                hintStyle: TextStyle(
-                                  color: Colors.blueGrey,
-                                ),
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: amountController,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                hintText: "Enter the Amount",
-                                hintStyle: TextStyle(
-                                  color: Colors.blueGrey,
-                                ),
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: TextField(
-                                onTap: () async {
-                                  // user can pick date
-                                  pickedDate = await showDatePicker(
-                                    context: context,
-                                    initialDate: DateTime.now(),
-                                    firstDate: DateTime(2000),
-                                    lastDate: DateTime(2100),
-                                  );
-                                  String date =
-                                      DateFormat.yMMMMd().format(pickedDate!);
-                                  dateController.text = date;
-                                  setState(() {});
-                                },
-                                controller: dateController,
-                                decoration: const InputDecoration(
-                                  labelText: "DATE",
-                                  hintStyle: TextStyle(
-                                    color: Colors.blueGrey,
-                                  ),
-                                  filled: true,
-                                  prefixIcon: Icon(Icons.calendar_today),
-                                  prefixIconColor: Colors.blue,
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                      color: Colors.blue,
-                                    ),
-                                  ),
-                                ),
-                                readOnly: true,
-                              ),
-                            ),
-                            const SizedBox(height: 15),
-                            RadioMenuButton(
-                              value: options[0],
-                              groupValue: currentOption,
-                              onChanged: (expense) {
-                                currentOption = expense.toString();
-                                setState(() {});
-                              },
-                              child: const Padding(
-                                padding: EdgeInsets.only(left: 12),
-                                child: Text(
-                                  "Expense",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 15.4,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            RadioMenuButton(
-                              style: ButtonStyle(
-                                iconSize: MaterialStateProperty.all(20),
-                              ),
-                              value: options[1],
-                              groupValue: currentOption,
-                              onChanged: (income) {
-                                currentOption = income.toString();
-                                setState(() {});
-                              },
-                              child: const Padding(
-                                padding: EdgeInsets.only(left: 12),
-                                child: Text(
-                                  "Income",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 15.4,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-          child: const Icon(Icons.add, size: 26),
-        ),
-      ),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: const Text("Expense Tracker"),
-        centerTitle: true,
-        elevation: 0,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.only(top: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: FundCondition(
-                    type: "DEPOSIT",
-                    amount: "$totalMoney",
-                    icon: "blue",
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 5),
-                  child: FundCondition(
-                    type: "EXPENSE",
-                    amount: "$spentMoney",
-                    icon: "orange",
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 5, right: 8),
-                  child: FundCondition(
-                    type: "INCOME",
-                    amount: "$income",
-                    icon: "grey",
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Expanded(
-              child: ListView.builder(
-                itemCount: expenses.length,
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: const Text(
-                              "Confirm to Delete the Item ?",
-                              style: TextStyle(
-                                fontSize: 19.0,
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: const Text(
-                                  "CANCEL",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  final myExpense = expenses[index];
-                                  if (myExpense.isIncome) {
-                                    income -= myExpense.amount;
-                                    totalMoney -= myExpense.amount;
-                                    setState(() {});
-                                  } else if (!myExpense.isIncome) {
-                                    spentMoney -= myExpense.amount;
-                                    totalMoney += myExpense.amount;
-                                    setState(() {});
-                                  }
-                                  expenses.remove(myExpense);
-                                  setState(() {});
-                                  Navigator.pop(context);
-                                },
-                                child: const Text(
-                                  "DELETE",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                    child: Item(
-                      expense: ExpenseModel(
-                        item: expenses[index].item,
-                        amount: expenses[index].amount,
-                        isIncome: expenses[index].isIncome,
-                        date: expenses[index].date,
-                      ),
-                      onDelete: () {},
-                    ),
-                  );
-                },
               ),
             ),
           ],
@@ -329,3 +87,101 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
+// import 'package:expense_tracker/views/components/add_budget.dart';
+// import 'package:expense_tracker/views/components/budget_history.dart';
+// import 'package:expense_tracker/views/components/categories.dart';
+// import 'package:expense_tracker/views/screens/controller/homepage_controller.dart';
+// import 'package:flutter/material.dart';
+// import 'package:get/get.dart';
+//
+// class HomePage extends StatelessWidget {
+//   const HomePage({super.key});
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     HomePageController homePageController = Get.put(HomePageController());
+//
+//     List<Widget> pages = [
+//       const Categories(),
+//       const AddBudget(),
+//       const BudgetHistory(),
+//     ];
+//
+//     return Scaffold(
+//       body: Container(
+//         height: double.infinity,
+//         width: double.infinity,
+//         alignment: Alignment.center,
+//         decoration: BoxDecoration(
+//           gradient: LinearGradient(
+//             begin: Alignment.topLeft,
+//             end: Alignment.bottomRight,
+//             colors: [
+//               Colors.white,
+//               Colors.blueAccent.shade200,
+//             ],
+//           ),
+//         ),
+//         child: Column(
+//           children: [
+//             Expanded(
+//               flex: 6,
+//               child: Padding(
+//                 padding: const EdgeInsets.all(8.0),
+//                 child: PageView(
+//                   onPageChanged: (val) async {
+//                     await homePageController.changePage(val);
+//                   },
+//                   controller: homePageController.pageController,
+//                   children: pages,
+//                 ),
+//               ),
+//             ),
+//             Expanded(
+//               child: SingleChildScrollView(
+//                 child: Container(
+//                   height: 80,
+//                   margin: const EdgeInsets.all(25),
+//                   decoration: BoxDecoration(
+//                     borderRadius: BorderRadius.circular(30),
+//                     color: Colors.black.withOpacity(0.75),
+//                   ),
+//                   child: Obx(
+//                     () => BottomNavigationBar(
+//                       currentIndex: homePageController.currentPage.value,
+//                       onTap: (val) async {
+//                         await homePageController.changePage(val);
+//                       },
+//                       elevation: 0,
+//                       type: BottomNavigationBarType.shifting,
+//                       selectedItemColor: Colors.white,
+//                       unselectedItemColor: Colors.blue.shade200,
+//                       items: const [
+//                         BottomNavigationBarItem(
+//                           icon: Icon(Icons.category),
+//                           label: 'Add Category',
+//                           backgroundColor: Colors.transparent,
+//                         ),
+//                         BottomNavigationBarItem(
+//                           icon: Icon(Icons.monetization_on),
+//                           label: 'Add Budget',
+//                           backgroundColor: Colors.transparent,
+//                         ),
+//                         BottomNavigationBarItem(
+//                           icon: Icon(Icons.history),
+//                           label: 'Budget History',
+//                           backgroundColor: Colors.transparent,
+//                         ),
+//                       ],
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
